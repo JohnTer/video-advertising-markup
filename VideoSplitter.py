@@ -8,7 +8,7 @@ class VideoSplitter(object):
     def __init__(self) -> None:
         self.target_dir = '/tmp/batch'
         self.file_prefix = 'tmp_file_stream-'
-        self.ffmpeg_path = '/Users/vadimterentev/Downloads/ffmpeg'
+        self.ffmpeg_path = 'ffmpeg'
         self.stream_link = 'rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4'
 
         self.ffmpeg_command = r'{} -i {}  -map 0:0 -map 0:1 -s 640x360 -vcodec libx264 -g 60 -vb 500000 -strict experimental -vf yadif -acodec aac -ab 96000 -ac 2 -y -f segment -segment_time 20 "{}%01d.ts"'
