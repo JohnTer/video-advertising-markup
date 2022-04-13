@@ -16,3 +16,6 @@ class StreamData(object):
             return next(self.ads_iter)
         except StopIteration:
             return None
+
+    def __contains__(self, key):
+        return key.strip() == self.local_path.strip()

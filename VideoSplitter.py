@@ -5,11 +5,11 @@ import subprocess
 
 
 class VideoSplitter(object):
-    def __init__(self) -> None:
-        self.target_dir = '/tmp/batch'
-        self.file_prefix = 'tmp_file_stream-'
+    def __init__(self, temp_stream_dir, file_prefix, stream_link) -> None:
+        self.target_dir = temp_stream_dir
+        self.file_prefix = file_prefix
         self.ffmpeg_path = 'ffmpeg'
-        self.stream_link = 'rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4'
+        self.stream_link = stream_link
 
         self.ffmpeg_command = r'{} -i {}  -map 0:0 -map 0:1 -s 640x360 -vcodec libx264 -g 60 -vb 500000 -strict experimental -vf yadif -acodec aac -ab 96000 -ac 2 -y -f segment -segment_time 20 "{}%01d.ts"'
         self.run_flag = False
@@ -35,19 +35,21 @@ class VideoSplitter(object):
     def run_service(self):
         cmd = self.get_shell_command()
         process = subprocess.Popen(['bash', '-x', 'cmd_split.sh'], 
-                           stdout=subprocess.PIPE,
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL,
                            universal_newlines=True)
         
         while True:
-            output = process.stdout.readline()
-            print(output.strip())
+           # output = process.stdout.readline()
+           # print(output.strip())
             # Do something else
             return_code = process.poll()
             if return_code is not None:
-                print('RETURN CODE', return_code)
+               # print('RETURN CODE', return_code)
                 # Process has finished, read rest of the output 
-                for output in process.stdout.readlines():
-                    print(output.strip())
+                #for output in process.stdout.readlines():
+                #    pass
+                  #  print(output.strip())
                 break
 
 
