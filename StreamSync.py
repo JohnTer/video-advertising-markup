@@ -1,18 +1,23 @@
-import glob
+import glob, os, stat
+import sys
 from threading import Thread
 
 import time, datetime
 
 from VideoSplitter import VideoSplitter
 from VideoStreamer import VideoStreamer
-from StreamData import StreamData
-
+from StreamData import StreamData, AdData
+import subprocess
 
 
 
 
 class StreamSync(object):
     def __init__(self) -> None:
+
+        self.ffmpeg_path = 'ffmpeg'
+
+
         self.chunk_dir = '/home/john/Downloads/temp'
         self.file_prefix = 'tmp_file_stream-'
 
@@ -23,12 +28,44 @@ class StreamSync(object):
 
         self.stream_data_list = []
 
+        self.buffer_pipe_path = '/home/john/Downloads/temp/mypipe'
+
+        if self.chunk_dir[-1] != '/':
+            self.chunk_dir += '/'
+
         self.video_splitter = VideoSplitter(self.chunk_dir, self.file_prefix, self.stream_link_in)
-        self.video_streamer = VideoStreamer(self.stream_data_list, self.stream_link_out)
+        self.video_streamer = VideoStreamer(self.stream_data_list, self.stream_link_out, self.buffer_pipe_path)
      
         self.video_splitter_thread = Thread(target=self.video_splitter.run)
         self.video_streamer_thread = Thread(target=self.video_streamer.run)
+
+
+        self.ffmpeg_command_f = r'{} -i {} -vcodec copy -acodec copy -t {} {}'
+        self.ffmpeg_command_s = r'{} -i {} -vcodec copy -acodec copy -ss {} {}'
+
     
+    def get_shell_command(self, input_file, split_time, output_file_f, output_file_s):
+        command = self.ffmpeg_command_f.format(
+            self.ffmpeg_path, input_file, split_time.strftime("%H:%M:%S"), output_file_f)
+
+        with open('cmd_split_f.sh', 'w') as f:
+            f.write(command)
+
+        command = self.ffmpeg_command_s.format(
+            self.ffmpeg_path, input_file, split_time.strftime("%H:%M:%S"), output_file_s)
+
+        with open('cmd_split_s.sh', 'w') as f:
+            f.write(command)
+
+
+         
+    
+    def create_buffer_pipe(self):
+        with open(self.buffer_pipe_path, 'w') as f:
+            pass
+        return
+        if not stat.S_ISFIFO(os.stat(self.buffer_pipe_path).st_mode):
+            os.mkfifo(self.buffer_pipe_path)
     
     def start_splitter(self):
         self.video_splitter_thread.start()
@@ -37,11 +74,57 @@ class StreamSync(object):
         self.video_streamer_thread.start()
 
     def get_file_chunks(self):
-        if self.chunk_dir[-1] != '/':
-            self.chunk_dir += '/'
-        return sorted(glob.glob(self.chunk_dir + '*'))
+
+        files = [f for f in glob.glob(self.chunk_dir + '*') if self.file_prefix in f]
+        return sorted(files)
     
-    def get_ready_chunk_list(self):
+    
+    def split_video(self, path, split_time):
+        ftmp_file = self.chunk_dir + 'temp1.ts'
+        stmp_file = self.chunk_dir + 'temp2.ts'
+
+
+        self.get_shell_command(path, split_time, ftmp_file, stmp_file)
+        process = subprocess.Popen(['bash', '-x', 'cmd_split_f.sh'],
+                                   stdout=subprocess.PIPE,
+          #                         stderr=subprocess.DEVNULL,
+                                   universal_newlines=True)
+
+        process = subprocess.Popen(['bash', '-x', 'cmd_split_s.sh'],
+                                   stdout=subprocess.PIPE,
+          #                         stderr=subprocess.DEVNULL,
+                                   universal_newlines=True)
+        return ftmp_file, stmp_file
+    
+    
+    def ads_preproccessor(self):
+        f = lambda x: x
+
+
+        for i, stream_data in enumerate(self.stream_data_list):
+            if stream_data.ads_proccessed:
+                continue
+            stream_data = f(stream_data)
+            if 'tmp_file_stream-2.ts' in stream_data.local_path:
+
+                split_files = self.split_video(stream_data.local_path, datetime.datetime.strptime('00:00:10', "%H:%M:%S"))
+                stream_data.biary_data_parts.clear()
+                for filename in split_files:
+                    with open(filename, 'rb') as f:
+                        data = f.read()
+                        stream_data.biary_data_parts.append(data)
+                
+                ads_path = '/home/john/Downloads/ads5.ts'
+                with open(ads_path, 'rb') as f:
+                    data = f.read()
+                stream_data.ads_list = [AdData(ads_path, datetime.datetime.strptime('00:00:10', "%H:%M:%S"), data)]
+                stream_data.ads_proccessed = True
+                
+                self.stream_data_list[i] = stream_data
+    
+    
+    
+    def prepare_chunk_list(self):
         #a = StreamData('/home/john/Downloads/out.mp4',
         #               [(datetime.datetime.strptime('00:00:30', "%H:%M:%S"), '/home/john/Downloads/ads.mp4'),
         #                (datetime.datetime.strptime('00:01:20', "%H:%M:%S"), '/home/john/Downloads/ads2.mp4')])
@@ -55,30 +138,43 @@ class StreamSync(object):
         
         
         chunks = self.get_file_chunks()
+        del chunks[-1]
         for path in chunks:
             if not search(path):
-                if 'tmp_file_stream-2.ts' in path:
-                    self.stream_data_list.append(StreamData(path, [(datetime.datetime.strptime('00:00:10', "%H:%M:%S"), '/home/john/Downloads/ads.mp4')]))
-                else:
-                    self.stream_data_list.append(StreamData(path, []))
+
+                data = b''
+                while len(data) == 0:
+                    with open(path, 'rb') as f:
+                        data = f.read()
+                sd = StreamData(path, [])
+                sd.binary_data_parts.append(data)
+                sd.loaded = True
+                
+                self.ads_preproccessor()
+                os.unlink(path)
+                self.stream_data_list.append(sd)
+
+        
     
     
     def run(self):
+        self.create_buffer_pipe()
         self.start_splitter()
         while len(self.get_file_chunks()) < 3:
-            print(f'sleep current batchize {len(self.get_file_chunks())}')
             time.sleep(4)
 
-        self.get_ready_chunk_list()
+        self.prepare_chunk_list()
         self.start_streamer()
         while True:
             time.sleep(5)
-            self.get_ready_chunk_list()
-            print(f'current batchize {len(self.get_file_chunks())}')
+            self.prepare_chunk_list()
 
 
 
 if __name__ == '__main__':
+    #t = datetime.datetime.strptime('00:00:10', "%H:%M:%S")
+    #p = '/home/john/Downloads/ads.mp4'
+    #StreamSync().split_video(p, t)
     StreamSync().run()
 
         

@@ -1,21 +1,31 @@
 
 from dataclasses import dataclass
-from typing import Tuple, List
+from datetime import datetime
+from typing import Tuple, List, ByteString
+
+
+@dataclass
+class AdData(object):
+    path_to_ad: str
+    start_time: datetime
+    data: ByteString
+
+
+    def __post_init__(self):
+        self.loaded = False
+
+
 
 
 @dataclass
 class StreamData(object):
     local_path: str
-    ads_list: List[Tuple[str, str]]
+    ads_list: List[Tuple[AdData]]
 
     def __post_init__(self):
-        self.ads_iter = iter(self.ads_list)
+        self.binary_data_parts = []
+        self.loaded = False
+        self.ads_proccessed = False
 
-    def get_next_ad(self):
-        try:
-            return next(self.ads_iter)
-        except StopIteration:
-            return None
-
-    def __contains__(self, key):
-        return key.strip() == self.local_path.strip()
+    def contain_path(self, path):
+        return path == self.local_path
