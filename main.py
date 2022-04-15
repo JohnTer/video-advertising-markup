@@ -12,13 +12,13 @@ class AdsMarkup(object):
         self.result = None
 
     def get_markup_vector(self):
-        vp = VideoProccessor(s)
+        vp = VideoProccessor(self.filepath)
         vp.open_video()
         vp_hashvector_diff = vp.get_frame_hashvector_diff()
         vp_hashvector_score = MarkupProccessor().get_score(vp_hashvector_diff)
 
 
-        fp = FileProccessor(s, self.ffmpeg_path)
+        fp = FileProccessor(self.filepath, self.ffmpeg_path)
         audio = fp.get_audio_from_video()
         ap = AudioProccessor(audio)
         ap.read_file_wav()
