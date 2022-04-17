@@ -8,15 +8,15 @@ class AudioProccessor(object):
     TORCH_REPO_NAME: str = 'snakers4/silero-vad'
     TORCH_MODEL_NAME: str = 'silero_vad'
 
-    def __init__(self, wav_filename: str) -> None:
-        self.filename = wav_filename
+    def __init__(self) -> None:
+        
 
         self.model = None
         self.get_speech_timestamps = None
         self.duration = None
 
         self._init_torch_model()
-        self._init_framerate()
+        
 
     def _init_torch_model(self):
         model, utils = torch.hub.load(repo_or_dir=AudioProccessor.TORCH_REPO_NAME,
@@ -36,7 +36,9 @@ class AudioProccessor(object):
 
         return self.sample_rate
 
-    def read_file_wav(self):
+    def read_file_wav(self, wav_filename):
+        self.filename = wav_filename
+        self._init_framerate()
         self.wav: Callable = self.functions['read_audio'](self.filename)
 
     def get_speech(self, seconds_flag: bool = True):
@@ -58,6 +60,8 @@ class AudioProccessor(object):
         def weight_function(v):
             return v[1] - v[0]
         silent_vector: list = []
+        if not noise_vector:
+            return [], []
 
         silent_vector.append((0, noise_vector[0][0]))
         for i in range(len(noise_vector)-1):

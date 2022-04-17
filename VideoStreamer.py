@@ -58,7 +58,7 @@ class VideoStreamer(object):
 
             chunk = self.batch_list[0]
             while not chunk.loaded:
-                time.sleep(2)
+                time.sleep(1)
                 chunk = self.batch_list[0]
             
             for i, ad in enumerate(chunk.ads_list):
@@ -76,8 +76,8 @@ class VideoStreamer(object):
     def start_stream(self):
         cmd = self.get_shell_command()
         process = subprocess.Popen(['bash', '-x', 'cmd_stream.sh'],
-                                   stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE,
+        #                           stderr=subprocess.DEVNULL,
                                    universal_newlines=True)
 
         while True:

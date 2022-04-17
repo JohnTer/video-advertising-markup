@@ -13,6 +13,8 @@ class MarkupProccessor(object):
             packet_info = {''}
 
     def get_score(self, noise_vector_with_weight):
+        if not noise_vector_with_weight:
+            return []
         max_diff = max(noise_vector_with_weight, key=lambda x: x['weight'])
         min_diff = min(noise_vector_with_weight, key=lambda x: x['weight'])
         delta = max_diff['weight'] - min_diff['weight']
@@ -27,7 +29,7 @@ class MarkupProccessor(object):
                 time_tuple = silence_element['time']
                 if time_tuple[0] <= diff_element['time'] <= time_tuple[1]:
                     return silence_element['weight']
-            return 0
+            return 0.01
         
         weight_vector = []
         for diff_element in frame_diff_vector:
