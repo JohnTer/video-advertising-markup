@@ -54,9 +54,10 @@ class VideoProccessor(object):
 
         success, prev_frame = self.video_capture.read()
         prev_frame_hash = self.get_frame_hash(prev_frame)
+        new_time = self.video_capture.get(cv2.CAP_PROP_POS_MSEC)
         current_frame = None
 
-        frame_count = 0
+        frame_count = 1
         while success:
             success, current_frame = self.video_capture.read()
             if not success:
@@ -64,13 +65,18 @@ class VideoProccessor(object):
 
             current_frame_hash = self.get_frame_hash(current_frame)
             frame_time = self.get_frame_time(frame_count)
+            new_time = self.video_capture.get(cv2.CAP_PROP_POS_MSEC) + 1000. / self.video_capture.get(cv2.CAP_PROP_FPS) 
             data = {
-                'time': frame_time,
-                'weight': current_frame_hash - prev_frame_hash
+                'time': new_time / 1000.,
+                'weight': current_frame_hash - prev_frame_hash,
+                'raw0': prev_frame,
+                'raw1': current_frame,
+                'frames': frame_count
             }
             frame_hash_buffer_diff.append(data)
             prev_frame_hash = current_frame_hash # Optimize it! store hash instead of frame
-
+            prev_frame = current_frame
+            
             frame_count += 1
         return frame_hash_buffer_diff
 

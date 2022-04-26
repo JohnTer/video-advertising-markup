@@ -15,11 +15,13 @@ class MarkupProccessor(object):
     def get_score(self, noise_vector_with_weight):
         if not noise_vector_with_weight:
             return []
-        max_diff = max(noise_vector_with_weight, key=lambda x: x['weight'])
-        min_diff = min(noise_vector_with_weight, key=lambda x: x['weight'])
-        delta = max_diff['weight'] - min_diff['weight']
+        max_diff = max(noise_vector_with_weight, key=lambda x: x['weight'])['weight']
+        min_diff = min(noise_vector_with_weight, key=lambda x: x['weight'])['weight']
+        delta = max_diff - min_diff
+        
+        
         for i in range(len(noise_vector_with_weight)):
-            noise_vector_with_weight[i]['weight'] = (noise_vector_with_weight[i]['weight'] - min_diff['weight']) / delta
+            noise_vector_with_weight[i]['weight'] = (noise_vector_with_weight[i]['weight'] - min_diff) / delta
 
         return noise_vector_with_weight
 
