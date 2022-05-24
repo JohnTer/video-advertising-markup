@@ -3,6 +3,7 @@ import math
  
 
 import cv2
+import moviepy.editor as mpy
 import time, sys
 import imagehash
 
@@ -34,6 +35,7 @@ class VideoProccessor(object):
     def open_video(self):
         self.video_capture = cv2.VideoCapture(self.filename)
         self.fps = self.video_capture.get(cv2.CAP_PROP_FPS)
+        self.vid = mpy.VideoFileClip(self.filename)
 
     def get_frame_hash(self, frame):
         image = Image.fromarray(frame)
@@ -58,16 +60,17 @@ class VideoProccessor(object):
         current_frame = None
 
         frame_count = 1
-        while success:
-            success, current_frame = self.video_capture.read()
-            if not success:
-                break
+        #while success:
+        for timestamp, current_frame in self.vid.iter_frames(with_times=True):
+            #success, current_frame = self.video_capture.read()
+            #if not success:
+            #    break
 
             current_frame_hash = self.get_frame_hash(current_frame)
             frame_time = self.get_frame_time(frame_count)
             new_time = self.video_capture.get(cv2.CAP_PROP_POS_MSEC) + 1000. / self.video_capture.get(cv2.CAP_PROP_FPS) 
             data = {
-                'time': new_time / 1000.,
+                'time': timestamp, #new_time / 1000.,
                 'weight': current_frame_hash - prev_frame_hash,
                 'raw0': prev_frame,
                 'raw1': current_frame,
@@ -90,7 +93,7 @@ class VideoProccessor(object):
 
 
 if __name__ == '__main__':
-    s = '/Users/vadimterentev/Downloads/output.mp4'
+    s = '/home/john/Downloads/videos/анбоксинг/out.mp4'
     a = VideoProccessor(s)
     a.open_video()
     v = a.get_frame_hashvector_diff()

@@ -39,7 +39,7 @@ class AdsMarkup(object):
 
 if __name__ == '__main__':
 
-    s = '/home/john/Downloads/videos/лайфхак/out.mp4'
+    s = '/home/john/Downloads/videos/out.mp4'
     f = 'ffmpeg'
 
     a = AdsMarkup(s, f)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         mx = max(t, key=lambda x: x['weight'])
         i = t.index(mx)
 
-        new_time = round(mx['time'])
+        new_time = round(mx['time'], 3)
         print(new_time, mx['weight'])
 
         

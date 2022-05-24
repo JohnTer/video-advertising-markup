@@ -54,7 +54,7 @@ class StreamSync(object):
         self.ffmpeg_command_s = r'{} -i {} -vcodec copy -acodec copy -ss {} {}'
 
         self.ap = AudioProccessor()
-        self.video_processor = VideoProccessor()
+        #self.video_processor = VideoProccessor()
 
 
     def get_shell_command(self, input_file, split_time, output_file_f, output_file_s):
