@@ -21,7 +21,7 @@ class MarkupProccessor(object):
         
         
         for i in range(len(noise_vector_with_weight)):
-            noise_vector_with_weight[i]['weight'] = (noise_vector_with_weight[i]['weight'] - min_diff) / delta
+            noise_vector_with_weight[i]['weight'] = (noise_vector_with_weight[i]['weight'] - min_diff) / delta + 1
 
         return noise_vector_with_weight
 

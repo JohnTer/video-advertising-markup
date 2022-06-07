@@ -23,7 +23,8 @@ class AdsMarkup(object):
         audio = fp.get_audio_from_video()
         ap = AudioProccessor()
         ap.read_file_wav(audio)
-        silent_vector = ap.get_silent(ap.get_speech()[0])[1]
+        speech_vector = ap.get_speech()
+        silent_vector = ap.get_silent(speech_vector[0])[1]
         
 
         silent_vector_score = MarkupProccessor().get_score(silent_vector)
@@ -36,6 +37,22 @@ class AdsMarkup(object):
     def get_top_result(self, top=5):
         return self.result[:top]
 
+    def get_n_result(self, n=5):
+        nums= np.array([x['time'] for x in  self.result])
+        km = ckwrap.ckmeans(nums, n)
+
+        buckets = [[] for _ in  range(n)]
+        for i in range(len(nums)):
+            buckets[km.labels[i]].append(self.result[i])
+        
+        result = []
+        for ind, t in enumerate(buckets):
+            mx = max(t, key=lambda x: x['weight'])
+            result.append(mx)
+
+            
+        return result
+
 
 if __name__ == '__main__':
 
@@ -47,7 +64,7 @@ if __name__ == '__main__':
     v = a.get_top_result()
 
 
-    К = 5
+    К = 3
     nums= np.array([x['time'] for x in  a.result])
     km = ckwrap.ckmeans(nums, К)
 
@@ -70,9 +87,11 @@ if __name__ == '__main__':
         new_time = round(mx['time'], 3)
         print(new_time, mx['weight'])
 
-        
-        cv2.imwrite(f'results/{ind}_pre_{new_time}.jpg', mx['raw0'])
-        cv2.imwrite(f'results/{ind}_cur_{new_time}.jpg', mx['raw1'])
+        frame1 = cv2.cvtColor(mx['raw0'], cv2.COLOR_RGB2BGR)
+        cv2.imwrite(f'results/{ind}_pre_{new_time}.jpg', frame1)
+
+        frame2 = cv2.cvtColor(mx['raw1'], cv2.COLOR_RGB2BGR)
+        cv2.imwrite(f'results/{ind}_cur_{new_time}.jpg', frame2)
         
 
 
