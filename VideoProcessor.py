@@ -72,8 +72,8 @@ class VideoProccessor(object):
             data = {
                 'time': timestamp, #new_time / 1000.,
                 'weight': current_frame_hash - prev_frame_hash,
-                'raw0': prev_frame,
-                'raw1': current_frame,
+            #    'raw0': prev_frame,
+            #    'raw1': current_frame,
                 'frames': frame_count
             }
             frame_hash_buffer_diff.append(data)
